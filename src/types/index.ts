@@ -138,6 +138,10 @@ export interface CreateProjectRequest {
   projectManagerEmail?: string;
 }
 
+export interface UpdateProjectRequest {
+  name: string;
+}
+
 export interface AddMemberRequest {
   email: string;
   role: ProjectRole;

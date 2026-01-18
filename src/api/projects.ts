@@ -4,6 +4,7 @@ import type {
   Project,
   ProjectMember,
   CreateProjectRequest,
+  UpdateProjectRequest,
   AddMemberRequest,
   AddMemberResponse,
   Board,
@@ -72,6 +73,26 @@ export const projectsApi = {
     const response = await apiClient.post<ApiResponse<Board>>(
       `/projects/${projectId}/boards`,
       data
+    );
+    return response.data;
+  },
+
+  updateProject: async (
+    projectId: string,
+    data: UpdateProjectRequest
+  ): Promise<ApiResponse<Project>> => {
+    const response = await apiClient.patch<ApiResponse<Project>>(
+      `/projects/${projectId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteProject: async (
+    projectId: string
+  ): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      `/projects/${projectId}`
     );
     return response.data;
   },

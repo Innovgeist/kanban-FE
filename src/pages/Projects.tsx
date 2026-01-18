@@ -15,6 +15,9 @@ import {
   Loader,
   Center,
   Alert,
+  ActionIcon,
+  Menu,
+  rem,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import {
@@ -22,9 +25,13 @@ import {
   IconFolder,
   IconAlertCircle,
   IconCalendar,
+  IconDotsVertical,
+  IconEdit,
+  IconTrash,
 } from '@tabler/icons-react';
 import { useAuthStore, useProjectStore } from '../store';
 import { AppLayout } from '../components/layout/AppLayout';
+import { notifications } from '@mantine/notifications';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -35,11 +42,17 @@ export function ProjectsPage() {
     error,
     fetchProjects,
     createProject,
+    updateProject,
+    deleteProject,
     selectProject,
     clearError,
   } = useProjectStore();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<{ _id: string; name: string } | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const isSuperAdmin = user?.role === 'SUPERADMIN';
 
@@ -54,6 +67,15 @@ export function ProjectsPage() {
         value === '' || /^\S+@\S+$/.test(value)
           ? null
           : 'Invalid email format',
+    },
+  });
+
+  const editForm = useForm({
+    initialValues: {
+      name: '',
+    },
+    validate: {
+      name: (value) => (value.length >= 1 ? null : 'Project name is required'),
     },
   });
 
@@ -82,6 +104,44 @@ export function ProjectsPage() {
   const handleProjectClick = (project: typeof projects[0]) => {
     selectProject(project);
     navigate(`/projects/${project._id}`);
+  };
+
+  const handleEditProject = async (values: { name: string }) => {
+    if (!selectedProject) return;
+    setActionLoading(true);
+    try {
+      await updateProject(selectedProject._id, { name: values.name.trim() });
+      setEditModalOpen(false);
+      setSelectedProject(null);
+      notifications.show({
+        title: 'Success',
+        message: 'Project updated successfully',
+        color: 'green',
+      });
+    } catch (err) {
+      // Error handled in store
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!selectedProject) return;
+    setActionLoading(true);
+    try {
+      await deleteProject(selectedProject._id);
+      setDeleteModalOpen(false);
+      setSelectedProject(null);
+      notifications.show({
+        title: 'Success',
+        message: 'Project deleted successfully',
+        color: 'green',
+      });
+    } catch (err) {
+      // Error handled in store
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -160,21 +220,76 @@ export function ProjectsPage() {
                 withBorder
                 shadow="sm"
                 radius="md"
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleProjectClick(project)}
+                className="hover:shadow-md transition-shadow"
               >
                 <Group justify="space-between" mb="xs">
-                  <Text fw={600} size="lg" lineClamp={1}>
-                    {project.name}
-                  </Text>
-                  <Badge
-                    color={project.role === 'ADMIN' ? 'blue' : 'gray'}
-                    variant="light"
+                  <Group
+                    gap="xs"
+                    style={{ flex: 1, cursor: 'pointer' }}
+                    onClick={() => handleProjectClick(project)}
                   >
-                    {project.role}
-                  </Badge>
+                    <Text fw={600} size="lg" lineClamp={1}>
+                      {project.name}
+                    </Text>
+                    {project.role && (
+                      <Badge
+                        color={project.role === 'ADMIN' ? 'blue' : 'gray'}
+                        variant="light"
+                      >
+                        {project.role === 'ADMIN' ? 'Project Manager' : 'Member'}
+                      </Badge>
+                    )}
+                  </Group>
+                  {isSuperAdmin && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Menu shadow="md" width={200} position="bottom-end">
+                        <Menu.Target>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <IconDotsVertical size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconEdit style={{ width: rem(14), height: rem(14) }} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProject(project);
+                              editForm.setValues({ name: project.name });
+                              setEditModalOpen(true);
+                            }}
+                          >
+                            Edit Project
+                          </Menu.Item>
+                          <Menu.Divider />
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProject(project);
+                              setDeleteModalOpen(true);
+                            }}
+                          >
+                            Delete Project
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </div>
+                  )}
                 </Group>
-                <Group gap="xs" c="dimmed">
+                <Group
+                  gap="xs"
+                  c="dimmed"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleProjectClick(project)}
+                >
                   <IconCalendar size={14} />
                   <Text size="xs">Created {formatDate(project.createdAt)}</Text>
                 </Group>
@@ -223,6 +338,76 @@ export function ProjectsPage() {
               </Group>
             </Stack>
           </form>
+        </Modal>
+
+        {/* Edit Project Modal */}
+        <Modal
+          opened={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedProject(null);
+            editForm.reset();
+          }}
+          title="Edit Project"
+          centered
+        >
+          <form onSubmit={editForm.onSubmit(handleEditProject)}>
+            <Stack gap="md">
+              <TextInput
+                label="Project Name"
+                placeholder="Enter project name"
+                required
+                {...editForm.getInputProps('name')}
+              />
+              <Group justify="flex-end" mt="md">
+                <Button
+                  variant="subtle"
+                  onClick={() => {
+                    setEditModalOpen(false);
+                    setSelectedProject(null);
+                    editForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" loading={actionLoading} color="blue">
+                  Save Changes
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Modal>
+
+        {/* Delete Project Modal */}
+        <Modal
+          opened={deleteModalOpen}
+          onClose={() => {
+            setDeleteModalOpen(false);
+            setSelectedProject(null);
+          }}
+          title="Delete Project"
+          centered
+        >
+          <Stack gap="md">
+            <Text>
+              Are you sure you want to delete &quot;{selectedProject?.name}&quot;? This action is
+              irreversible and will delete all boards, columns, and cards in this project.
+            </Text>
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setSelectedProject(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleDeleteProject} loading={actionLoading}>
+                Delete Project
+              </Button>
+            </Group>
+          </Stack>
         </Modal>
       </Container>
     </AppLayout>

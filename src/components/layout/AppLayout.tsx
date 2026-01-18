@@ -10,7 +10,6 @@ import {
   rem,
 } from '@mantine/core';
 import {
-  IconLayoutKanban,
   IconLogout,
   IconUser,
   IconChevronDown,
@@ -45,13 +44,17 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Group h="100%" px="md" justify="space-between">
           <Link to="/projects" className="no-underline">
             <Group gap="xs">
-              <IconLayoutKanban size={28} className="text-blue-600" />
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                style={{ height: '32px', width: 'auto', borderRadius:"50%" }}
+              />
               <Text
                 size="xl"
                 fw={700}
                 className="text-gray-800 hidden sm:block"
               >
-                KanbanBoard
+               ProductQ
               </Text>
             </Group>
           </Link>

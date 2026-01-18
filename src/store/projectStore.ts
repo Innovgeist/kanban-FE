@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Project, ProjectMember, Board, CreateProjectRequest, AddMemberRequest, AddMemberResponse } from '../types';
+import type { Project, ProjectMember, Board, CreateProjectRequest, UpdateProjectRequest, AddMemberRequest, AddMemberResponse } from '../types';
 import { projectsApi } from '../api';
 
 interface ProjectState {
@@ -14,6 +14,8 @@ interface ProjectState {
   fetchProjects: () => Promise<void>;
   selectProject: (project: Project) => void;
   createProject: (data: CreateProjectRequest) => Promise<Project>;
+  updateProject: (projectId: string, data: UpdateProjectRequest) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
   fetchProjectMembers: (projectId: string) => Promise<void>;
   addMember: (projectId: string, data: AddMemberRequest) => Promise<AddMemberResponse>;
   removeMember: (projectId: string, userId: string) => Promise<void>;
@@ -67,6 +69,50 @@ export const useProjectStore = create<ProjectState>((set) => ({
       const errorMessage =
         (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Failed to create project.';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  updateProject: async (projectId: string, data: UpdateProjectRequest) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await projectsApi.updateProject(projectId, data);
+      if (response.success) {
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p._id === projectId ? { ...p, ...response.data } : p
+          ),
+          currentProject: state.currentProject?._id === projectId
+            ? { ...state.currentProject, ...response.data }
+            : state.currentProject,
+          isLoading: false,
+        }));
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to update project.';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  deleteProject: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await projectsApi.deleteProject(projectId);
+      if (response.success) {
+        set((state) => ({
+          projects: state.projects.filter((p) => p._id !== projectId),
+          currentProject: state.currentProject?._id === projectId ? null : state.currentProject,
+          isLoading: false,
+        }));
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to delete project.';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
