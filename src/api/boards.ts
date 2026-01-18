@@ -8,6 +8,10 @@ import type {
   CreateCardRequest,
   MoveCardRequest,
   ReorderColumnItem,
+  UpdateBoardRequest,
+  UpdateColumnRequest,
+  UpdateCardRequest,
+  Board,
 } from '../types';
 
 export const boardsApi = {
@@ -57,6 +61,66 @@ export const boardsApi = {
     const response = await apiClient.patch<ApiResponse<Card>>(
       `/cards/${cardId}/move`,
       data
+    );
+    return response.data;
+  },
+
+  updateBoard: async (
+    boardId: string,
+    data: UpdateBoardRequest
+  ): Promise<ApiResponse<Board>> => {
+    const response = await apiClient.patch<ApiResponse<Board>>(
+      `/boards/${boardId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteBoard: async (
+    boardId: string
+  ): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      `/boards/${boardId}`
+    );
+    return response.data;
+  },
+
+  updateColumn: async (
+    columnId: string,
+    data: UpdateColumnRequest
+  ): Promise<ApiResponse<Column>> => {
+    const response = await apiClient.patch<ApiResponse<Column>>(
+      `/columns/${columnId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteColumn: async (
+    columnId: string
+  ): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      `/columns/${columnId}`
+    );
+    return response.data;
+  },
+
+  updateCard: async (
+    cardId: string,
+    data: UpdateCardRequest
+  ): Promise<ApiResponse<Card>> => {
+    const response = await apiClient.patch<ApiResponse<Card>>(
+      `/cards/${cardId}`,
+      data
+    );
+    return response.data;
+  },
+
+  deleteCard: async (
+    cardId: string
+  ): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      `/cards/${cardId}`
     );
     return response.data;
   },

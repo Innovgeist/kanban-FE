@@ -22,10 +22,9 @@ export const setTokens = (access: string, refresh: string) => {
 };
 
 export const getTokens = () => {
-  if (!accessToken) {
-    accessToken = localStorage.getItem('accessToken');
-    refreshToken = localStorage.getItem('refreshToken');
-  }
+  // Always sync with localStorage to ensure we have the latest tokens
+  accessToken = localStorage.getItem('accessToken');
+  refreshToken = localStorage.getItem('refreshToken');
   return { accessToken, refreshToken };
 };
 

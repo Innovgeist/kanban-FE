@@ -52,7 +52,10 @@ function App() {
   const { initialize, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    initialize();
+    initialize().catch(() => {
+      // Silently handle initialization errors
+      // The initialize function already handles clearing tokens on failure
+    });
   }, [initialize]);
 
   return (

@@ -30,10 +30,15 @@ export function AuthCallbackPage() {
       setTokens(accessToken, refreshToken);
 
       // Initialize auth state
-      initialize();
-
-      // Redirect to projects
-      navigate('/projects');
+      initialize()
+        .then(() => {
+          // Redirect to projects after initialization
+          navigate('/projects');
+        })
+        .catch(() => {
+          // If initialization fails, redirect to login
+          navigate('/login?error=initialization_failed');
+        });
     } else {
       setStatus('error');
       setErrorMessage('Missing authentication tokens');

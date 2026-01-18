@@ -56,7 +56,7 @@ export function SetupPasswordPage() {
       if (response.success) {
         const { tokens } = response.data;
         setTokens(tokens.accessToken, tokens.refreshToken);
-        initialize();
+        await initialize();
         setSuccess(true);
 
         setTimeout(() => {

@@ -56,14 +56,20 @@ export interface Column {
   boardId: string;
   name: string;
   order: number;
+  color?: string; // Hex color code (e.g., "#3b82f6")
   cards?: Card[];
 }
+
+export type CardPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export interface Card {
   _id: string;
   columnId: string;
   title: string;
   description?: string;
+  priority?: CardPriority;
+  expectedDeliveryDate?: string | null; // ISO 8601 date string
+  assignedTo?: User[]; // Array of assigned users
   order: number;
   createdBy: User;
   createdAt: string;
@@ -108,7 +114,12 @@ export type ErrorCode =
   | 'MEMBER_NOT_FOUND'
   | 'INVALID_INVITATION_TOKEN'
   | 'INVITATION_EXPIRED'
-  | 'GOOGLE_AUTH_FAILED';
+  | 'GOOGLE_AUTH_FAILED'
+  | 'INVALID_COLOR_FORMAT'
+  | 'INVALID_PRIORITY'
+  | 'INVALID_DATE_FORMAT'
+  | 'USER_NOT_PROJECT_MEMBER'
+  | 'INVALID_USER_ID';
 
 // Request Types
 export interface LoginRequest {
@@ -138,11 +149,15 @@ export interface CreateBoardRequest {
 
 export interface CreateColumnRequest {
   name: string;
+  color?: string; // Hex color code (e.g., "#3b82f6")
 }
 
 export interface CreateCardRequest {
   title: string;
   description?: string;
+  priority?: CardPriority;
+  expectedDeliveryDate?: string | null; // ISO 8601 date string
+  assignedTo?: string[]; // Array of user IDs
 }
 
 export interface MoveCardRequest {
@@ -153,4 +168,21 @@ export interface MoveCardRequest {
 export interface ReorderColumnItem {
   columnId: string;
   order: number;
+}
+
+export interface UpdateBoardRequest {
+  name: string;
+}
+
+export interface UpdateColumnRequest {
+  name?: string;
+  color?: string; // Hex color code (e.g., "#3b82f6")
+}
+
+export interface UpdateCardRequest {
+  title?: string;
+  description?: string;
+  priority?: CardPriority | null; // Can be null to reset to default
+  expectedDeliveryDate?: string | null; // ISO 8601 date string, can be null to remove
+  assignedTo?: string[]; // Array of user IDs, empty array to remove all
 }

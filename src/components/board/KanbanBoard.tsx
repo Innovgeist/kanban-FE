@@ -29,9 +29,10 @@ import { useBoardStore } from '../../store';
 
 interface KanbanBoardProps {
   boardId: string;
+  isProjectAdmin?: boolean;
 }
 
-export function KanbanBoard({ boardId }: KanbanBoardProps) {
+export function KanbanBoard({ boardId, isProjectAdmin = false }: KanbanBoardProps) {
   const { columns, createColumn, reorderColumns, optimisticMoveCard, moveCard, fetchBoard } =
     useBoardStore();
 
@@ -96,7 +97,7 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
     const activeIdStr = String(active.id);
     const overId = String(over.id);
 
-    // Only handle card dragging over columns
+    // Only handle card dragging
     if (activeType !== 'card') return;
 
     // Find the card being dragged (it may have moved due to previous optimistic updates)
@@ -105,31 +106,57 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
 
     // Determine the target column
     let targetColumnId: string;
+    let targetOrder: number;
+
     if (overId.startsWith('column-')) {
+      // Dropped on column container
       targetColumnId = overId.replace('column-', '');
+      const targetColumn = findColumn(targetColumnId);
+      if (!targetColumn) return;
+      targetOrder = targetColumn.cards?.length || 0;
     } else {
-      // Over another card - find its column
+      // Dropped on another card
       const overCardData = findCard(overId);
       if (!overCardData) return;
       targetColumnId = overCardData.column._id;
-    }
-
-    // Get current column of the card (from current state, not original)
-    const currentColumnId = activeCardData.column._id;
-
-    // If moving to a different column, update optimistically
-    if (currentColumnId !== targetColumnId) {
       const targetColumn = findColumn(targetColumnId);
       if (!targetColumn) return;
+      
+      const overCardIndex = targetColumn.cards?.findIndex((c) => c._id === overId) ?? -1;
+      if (overCardIndex === -1) return;
+      
+      // Calculate new order based on position
+      const currentColumnId = activeCardData.column._id;
+      const currentCardIndex = targetColumn.cards?.findIndex((c) => c._id === activeIdStr) ?? -1;
+      
+      if (currentColumnId === targetColumnId) {
+        // Same column reordering
+        if (currentCardIndex < overCardIndex) {
+          // Moving down - insert after the over card
+          targetOrder = overCardIndex;
+        } else {
+          // Moving up - insert before the over card
+          targetOrder = overCardIndex;
+        }
+      } else {
+        // Different column - insert after the over card
+        targetOrder = overCardIndex + 1;
+      }
+    }
 
-      // Calculate new order - place at end of target column
-      const newOrder = targetColumn.cards?.length || 0;
-      optimisticMoveCard(
-        activeIdStr,
-        currentColumnId,
-        targetColumnId,
-        newOrder
-      );
+    // Get current column of the card
+    const currentColumnId = activeCardData.column._id;
+
+    // Update optimistically if position changed
+    if (currentColumnId !== targetColumnId) {
+      // Different column
+      optimisticMoveCard(activeIdStr, currentColumnId, targetColumnId, targetOrder);
+    } else {
+      // Same column - check if order actually changed
+      const currentOrder = activeCardData.card.order;
+      if (currentOrder !== targetOrder) {
+        optimisticMoveCard(activeIdStr, currentColumnId, targetColumnId, targetOrder);
+      }
     }
   };
 
@@ -174,6 +201,9 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
         return;
       }
 
+      // Get current column of the card
+      const currentColumnId = activeCardData.column._id;
+
       // Determine target column and order based on where we dropped
       let targetColumnId: string;
       let newOrder: number;
@@ -202,16 +232,37 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
         return;
       }
 
-      // Find the card's current position in the target column
+      // Calculate the new order based on where the card was dropped
       const currentCards = targetColumn.cards || [];
-      const cardIndex = currentCards.findIndex((c) => c._id === activeIdStr);
-
-      if (cardIndex !== -1) {
-        // Card is in this column - use its current index as the order
-        newOrder = cardIndex;
-      } else {
-        // Card not found in target column - place at end
+      
+      if (overId.startsWith('column-')) {
+        // Dropped on column container - place at end
         newOrder = currentCards.length;
+      } else {
+        // Dropped on another card
+        const overCardIndex = currentCards.findIndex((c) => c._id === overId);
+        if (overCardIndex === -1) {
+          newOrder = currentCards.length;
+        } else {
+          const currentCardIndex = currentCards.findIndex((c) => c._id === activeIdStr);
+          
+          if (currentColumnId === targetColumnId && currentCardIndex !== -1) {
+            // Same column reordering
+            if (currentCardIndex < overCardIndex) {
+              // Moving down - place at the over card's position (account for removal)
+              newOrder = overCardIndex;
+            } else if (currentCardIndex > overCardIndex) {
+              // Moving up - place at the over card's position
+              newOrder = overCardIndex;
+            } else {
+              // Same position - no change needed
+              newOrder = currentCardIndex;
+            }
+          } else {
+            // Different column - place after the over card
+            newOrder = overCardIndex + 1;
+          }
+        }
       }
 
       // Make API call to persist the move
@@ -260,7 +311,9 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 px-2">
+      <div className="h-full flex flex-col">
+        <div style={{ height: '16px', minHeight: '16px', flexShrink: 0 }}></div>
+        <div className="flex gap-4 overflow-x-auto pb-4 px-2 flex-1 items-start">
         <SortableContext
           items={columnIds}
           strategy={horizontalListSortingStrategy}
@@ -270,6 +323,7 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
               key={column._id}
               column={column}
               cards={column.cards || []}
+              isProjectAdmin={isProjectAdmin}
             />
           ))}
         </SortableContext>
@@ -316,14 +370,15 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
         ) : (
           <Button
             variant="light"
-            color="gray"
+            color="blue"
             leftSection={<IconPlus size={16} />}
             onClick={() => setIsAddingColumn(true)}
-            className="min-w-[200px] h-[60px] border-2 border-dashed border-gray-300 hover:border-gray-400"
+            className="min-w-[200px] h-[60px] border-2 border-dashed border-blue-300 hover:border-blue-400"
           >
             Add Column
           </Button>
         )}
+        </div>
       </div>
 
       <DragOverlay>

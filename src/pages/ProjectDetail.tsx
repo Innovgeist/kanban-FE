@@ -35,10 +35,12 @@ import {
   IconCopy,
   IconCheck,
   IconMail,
+  IconEdit,
 } from '@tabler/icons-react';
-import { useAuthStore, useProjectStore } from '../store';
+import { useAuthStore, useProjectStore, useBoardStore } from '../store';
 import { AppLayout } from '../components/layout/AppLayout';
 import type { ProjectRole, AddMemberResponse } from '../types';
+import { notifications } from '@mantine/notifications';
 
 export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -57,6 +59,7 @@ export function ProjectDetailPage() {
     removeMember,
     clearError,
   } = useProjectStore();
+  const { updateBoard, deleteBoard } = useBoardStore();
 
   const [createBoardModalOpen, setCreateBoardModalOpen] = useState(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
@@ -64,6 +67,9 @@ export function ProjectDetailPage() {
   const [invitationData, setInvitationData] = useState<AddMemberResponse | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editBoardModalOpen, setEditBoardModalOpen] = useState(false);
+  const [deleteBoardModalOpen, setDeleteBoardModalOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<{ _id: string; name: string } | null>(null);
 
   const isSuperAdmin = user?.role === 'SUPERADMIN';
   const currentUserMember = members.find((m) => m.userId._id === user?._id);
@@ -162,6 +168,48 @@ export function ProjectDetailPage() {
     }
   };
 
+  const handleEditBoard = async (values: { name: string }) => {
+    if (!selectedBoard) return;
+    setActionLoading(true);
+    try {
+      await updateBoard(selectedBoard._id, { name: values.name.trim() });
+      setEditBoardModalOpen(false);
+      setSelectedBoard(null);
+      if (projectId) {
+        await fetchProjectBoards(projectId);
+      }
+      notifications.show({
+        title: 'Success',
+        message: 'Board updated successfully',
+        color: 'green',
+      });
+    } catch (err) {
+      // Error handled in store
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteBoard = async () => {
+    if (!selectedBoard || !projectId) return;
+    setActionLoading(true);
+    try {
+      await deleteBoard(selectedBoard._id);
+      setDeleteBoardModalOpen(false);
+      setSelectedBoard(null);
+      await fetchProjectBoards(projectId);
+      notifications.show({
+        title: 'Success',
+        message: 'Board deleted successfully',
+        color: 'green',
+      });
+    } catch (err) {
+      // Error handled in store
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -229,18 +277,24 @@ export function ProjectDetailPage() {
           </Tabs.List>
 
           <Tabs.Panel value="boards">
-            <Group justify="space-between" mb="lg">
-              <Text fw={500}>Project Boards</Text>
-              <Button
-                leftSection={<IconPlus size={16} />}
-                onClick={() => setCreateBoardModalOpen(true)}
-                size="sm"
-              >
-                New Board
-              </Button>
-            </Group>
+            {isLoading ? (
+              <Center py="xl">
+                <Loader size="lg" />
+              </Center>
+            ) : (
+              <>
+                <Group justify="space-between" mb="lg">
+                  <Text fw={500}>Project Boards</Text>
+                  <Button
+                    leftSection={<IconPlus size={16} />}
+                    onClick={() => setCreateBoardModalOpen(true)}
+                    size="sm"
+                  >
+                    New Board
+                  </Button>
+                </Group>
 
-            {boards.length === 0 ? (
+                {boards.length === 0 ? (
               <Card withBorder p="xl" radius="md" className="text-center">
                 <IconLayoutKanban
                   size={48}
@@ -268,14 +322,62 @@ export function ProjectDetailPage() {
                     withBorder
                     shadow="sm"
                     radius="md"
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => navigate(`/boards/${board._id}`)}
+                    className="hover:shadow-md transition-shadow"
                   >
-                    <Group gap="xs" mb="xs">
-                      <IconLayoutKanban size={20} className="text-blue-500" />
-                      <Text fw={600} size="lg" lineClamp={1}>
-                        {board.name}
-                      </Text>
+                    <Group justify="space-between" mb="xs" gap="xs">
+                      <Group
+                        gap="xs"
+                        style={{ flex: 1, cursor: 'pointer' }}
+                        onClick={() => navigate(`/boards/${board._id}`)}
+                      >
+                        <IconLayoutKanban size={20} className="text-blue-500" />
+                        <Text fw={600} size="lg" lineClamp={1} style={{ flex: 1 }}>
+                          {board.name}
+                        </Text>
+                      </Group>
+                      {isProjectAdmin && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Menu shadow="md" width={200} position="bottom-end">
+                            <Menu.Target>
+                              <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <IconDotsVertical size={16} />
+                              </ActionIcon>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              <Menu.Item
+                                leftSection={<IconEdit style={{ width: rem(14), height: rem(14) }} />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBoard(board);
+                                  boardForm.setValues({ name: board.name });
+                                  setEditBoardModalOpen(true);
+                                }}
+                              >
+                                Edit Board
+                              </Menu.Item>
+                              <Menu.Divider />
+                              <Menu.Item
+                                color="red"
+                                leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBoard(board);
+                                  setDeleteBoardModalOpen(true);
+                                }}
+                              >
+                                Delete Board
+                              </Menu.Item>
+                            </Menu.Dropdown>
+                          </Menu>
+                        </div>
+                      )}
                     </Group>
                     <Text size="xs" c="dimmed">
                       Created{' '}
@@ -288,24 +390,32 @@ export function ProjectDetailPage() {
                   </Card>
                 ))}
               </SimpleGrid>
+                )}
+              </>
             )}
           </Tabs.Panel>
 
           <Tabs.Panel value="members">
-            <Group justify="space-between" mb="lg">
-              <Text fw={500}>Team Members</Text>
-              {isProjectAdmin && (
-                <Button
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() => setAddMemberModalOpen(true)}
-                  size="sm"
-                >
-                  Add Member
-                </Button>
-              )}
-            </Group>
+            {isLoading ? (
+              <Center py="xl">
+                <Loader size="lg" />
+              </Center>
+            ) : (
+              <>
+                <Group justify="space-between" mb="lg">
+                  <Text fw={500}>Team Members</Text>
+                  {isProjectAdmin && (
+                    <Button
+                      leftSection={<IconPlus size={16} />}
+                      onClick={() => setAddMemberModalOpen(true)}
+                      size="sm"
+                    >
+                      Add Member
+                    </Button>
+                  )}
+                </Group>
 
-            {members.length === 0 ? (
+                {members.length === 0 ? (
               <Card withBorder p="xl" radius="md" className="text-center">
                 <IconUsers size={48} className="text-gray-400 mx-auto mb-4" />
                 <Title order={4} c="dimmed" mb="xs">
@@ -394,6 +504,8 @@ export function ProjectDetailPage() {
                   </Table.Tbody>
                 </Table>
               </Card>
+                )}
+              </>
             )}
           </Tabs.Panel>
         </Tabs>
@@ -557,6 +669,76 @@ export function ProjectDetailPage() {
                 }}
               >
                 Done
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+
+        {/* Edit Board Modal */}
+        <Modal
+          opened={editBoardModalOpen}
+          onClose={() => {
+            setEditBoardModalOpen(false);
+            setSelectedBoard(null);
+            boardForm.reset();
+          }}
+          title="Edit Board"
+          centered
+        >
+          <form onSubmit={boardForm.onSubmit(handleEditBoard)}>
+            <Stack gap="md">
+              <TextInput
+                label="Board Name"
+                placeholder="Enter board name"
+                required
+                {...boardForm.getInputProps('name')}
+              />
+              <Group justify="flex-end" mt="md">
+                <Button
+                  variant="subtle"
+                  onClick={() => {
+                    setEditBoardModalOpen(false);
+                    setSelectedBoard(null);
+                    boardForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" loading={actionLoading}>
+                  Save Changes
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Modal>
+
+        {/* Delete Board Modal */}
+        <Modal
+          opened={deleteBoardModalOpen}
+          onClose={() => {
+            setDeleteBoardModalOpen(false);
+            setSelectedBoard(null);
+          }}
+          title="Delete Board"
+          centered
+        >
+          <Stack gap="md">
+            <Text>
+              Are you sure you want to delete &quot;{selectedBoard?.name}&quot;? This action is
+              irreversible and will delete all columns and cards in this board.
+            </Text>
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  setDeleteBoardModalOpen(false);
+                  setSelectedBoard(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleDeleteBoard} loading={actionLoading}>
+                Delete Board
               </Button>
             </Group>
           </Stack>
