@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type {
   Board,
   Column,
-  Card,
   CreateColumnRequest,
   CreateCardRequest,
   UpdateBoardRequest,
