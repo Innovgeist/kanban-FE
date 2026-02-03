@@ -99,7 +99,7 @@ export function ProjectDetailPage() {
     }
   }, [projectId, fetchProjectBoards, fetchProjectMembers]);
 
-  const handleCreateBoard = async (values: typeof boardForm.values) => {
+  const  handleCreateBoard = async (values: typeof boardForm.values) => {
     if (!projectId) return;
     setActionLoading(true);
     try {
