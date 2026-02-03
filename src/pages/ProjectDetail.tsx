@@ -59,7 +59,7 @@ export function ProjectDetailPage() {
     removeMember,
     clearError,
   } = useProjectStore();
-  const { updateBoard, deleteBoard } = useBoardStore();
+  const { updateBoard, deleteBoard ,createColumn} = useBoardStore();
 
   const [createBoardModalOpen, setCreateBoardModalOpen] = useState(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
@@ -99,11 +99,15 @@ export function ProjectDetailPage() {
     }
   }, [projectId, fetchProjectBoards, fetchProjectMembers]);
 
-  const  handleCreateBoard = async (values: typeof boardForm.values) => {
+  const handleCreateBoard = async (values: typeof boardForm.values) => {
     if (!projectId) return;
     setActionLoading(true);
     try {
       const newBoard = await createBoard(projectId, values.name);
+
+    await createColumn(  newBoard._id,{  name: 'New', color: '#e0f2fe' });
+    await createColumn(newBoard._id, {name: 'Progress', color: '#fef3c7' });
+    await createColumn(newBoard._id,{  name: 'Completed', color: '#d1fae5' });
       setCreateBoardModalOpen(false);
       boardForm.reset();
       navigate(`/boards/${newBoard._id}`);
