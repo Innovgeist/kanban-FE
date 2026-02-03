@@ -60,7 +60,7 @@ export function KanbanBoard({
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [newColumnColor, setNewColumnColor] = useState();
+  const [newColumnColor, setNewColumnColor] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
