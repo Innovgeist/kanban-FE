@@ -69,7 +69,6 @@ export function ProjectDetailPage() {
     status: 'pending' | 'in-progress' | 'done' | 'failed';
     message?: string;
   }[]>([]);
-  const [lastCreatedBoardId, setLastCreatedBoardId] = useState<string | null>(null);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [invitationModalOpen, setInvitationModalOpen] = useState(false);
   const [invitationData, setInvitationData] = useState<AddMemberResponse | null>(null);
@@ -148,7 +147,6 @@ export function ProjectDetailPage() {
 
       // Completed all steps
       boardForm.reset();
-      setLastCreatedBoardId(newBoardId);
 
       // navigate to the new board after a short delay so user can see final status
       setTimeout(() => {
@@ -739,7 +737,7 @@ export function ProjectDetailPage() {
         >
           <Stack>
             {createProgress.map((step) => (
-              <Group key={step.id} position="apart">
+              <Group key={step.id} justify="space-between">
                 <Group>
                   {step.status === 'in-progress' && <Loader size="xs" />}
                   {step.status === 'done' && <IconCheck size={16} color="green" />}
