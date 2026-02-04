@@ -62,6 +62,14 @@ export function ProjectDetailPage() {
   const { updateBoard, deleteBoard ,createColumn} = useBoardStore();
 
   const [createBoardModalOpen, setCreateBoardModalOpen] = useState(false);
+  const [createProgressModalOpen, setCreateProgressModalOpen] = useState(false);
+  const [createProgress, setCreateProgress] = useState<{
+    id: string;
+    label: string;
+    status: 'pending' | 'in-progress' | 'done' | 'failed';
+    message?: string;
+  }[]>([]);
+  const [lastCreatedBoardId, setLastCreatedBoardId] = useState<string | null>(null);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [invitationModalOpen, setInvitationModalOpen] = useState(false);
   const [invitationData, setInvitationData] = useState<AddMemberResponse | null>(null);
@@ -99,20 +107,64 @@ export function ProjectDetailPage() {
     }
   }, [projectId, fetchProjectBoards, fetchProjectMembers]);
 
+  const updateStep = (id: string, status: 'pending' | 'in-progress' | 'done' | 'failed', message?: string) => {
+    setCreateProgress((prev) => prev.map((s) => (s.id === id ? { ...s, status, message } : s)));
+  };
+
   const handleCreateBoard = async (values: typeof boardForm.values) => {
     if (!projectId) return;
-    setActionLoading(true);
-    try {
-      const newBoard = await createBoard(projectId, values.name);
 
-    await createColumn(  newBoard._id,{  name: 'New', color: '#e0f2fe' });
-    await createColumn(newBoard._id, {name: 'Progress', color: '#fef3c7' });
-    await createColumn(newBoard._id,{  name: 'Completed', color: '#d1fae5' });
-      setCreateBoardModalOpen(false);
+    // Define steps
+    const steps = [
+      { id: 'createBoard', label: 'Creating board', status: 'pending' as const },
+      { id: 'col1', label: "Creating column 'New'", status: 'pending' as const },
+      { id: 'col2', label: "Creating column 'Progress'", status: 'pending' as const },
+      { id: 'col3', label: "Creating column 'Completed'", status: 'pending' as const },
+    ];
+
+    setCreateProgress(steps);
+    setCreateBoardModalOpen(false); // hide the form modal
+    setCreateProgressModalOpen(true); // show progress modal
+
+    let newBoardId: string | null = null;
+
+    try {
+      updateStep('createBoard', 'in-progress');
+      const newBoard = await createBoard(projectId, values.name);
+      newBoardId = newBoard._id;
+      updateStep('createBoard', 'done');
+
+      updateStep('col1', 'in-progress');
+      await createColumn(newBoardId, { name: 'New', color: '#e0f2fe' });
+      updateStep('col1', 'done');
+
+      updateStep('col2', 'in-progress');
+      await createColumn(newBoardId, { name: 'Progress', color: '#fef3c7' });
+      updateStep('col2', 'done');
+
+      updateStep('col3', 'in-progress');
+      await createColumn(newBoardId, { name: 'Completed', color: '#d1fae5' });
+      updateStep('col3', 'done');
+
+      // Completed all steps
       boardForm.reset();
-      navigate(`/boards/${newBoard._id}`);
+      setLastCreatedBoardId(newBoardId);
+
+      // navigate to the new board after a short delay so user can see final status
+      setTimeout(() => {
+        setCreateProgressModalOpen(false);
+        if (newBoardId) navigate(`/boards/${newBoardId}`);
+      }, 600);
     } catch (err) {
-      // Error handled in store
+      // mark the current step as failed
+      setCreateProgress((prev) => {
+        const inProgress = prev.find((s) => s.status === 'in-progress');
+        if (inProgress) {
+          return prev.map((s) => (s.id === inProgress.id ? { ...s, status: 'failed', message: String(err || 'Error') } : s));
+        }
+        // fallback
+        return prev.map((s) => (s.status === 'pending' ? { ...s, status: 'failed' } : s));
+      });
     } finally {
       setActionLoading(false);
     }
@@ -542,7 +594,7 @@ export function ProjectDetailPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" loading={actionLoading}>
+                <Button type="submit" disabled={createProgressModalOpen}>
                   Create Board
                 </Button>
               </Group>
@@ -675,6 +727,32 @@ export function ProjectDetailPage() {
                 Done
               </Button>
             </Group>
+          </Stack>
+        </Modal>
+
+        {/* Create Board Progress Modal */}
+        <Modal
+          opened={createProgressModalOpen}
+          onClose={() => setCreateProgressModalOpen(false)}
+          title="Creating Board"
+          centered
+        >
+          <Stack>
+            {createProgress.map((step) => (
+              <Group key={step.id} position="apart">
+                <Group>
+                  {step.status === 'in-progress' && <Loader size="xs" />}
+                  {step.status === 'done' && <IconCheck size={16} color="green" />}
+                  {step.status === 'failed' && (
+                    <IconAlertCircle size={16} color="red" />
+                  )}
+                  <Text>{step.label}</Text>
+                </Group>
+                <Text size="xs" c="dimmed">
+                  {step.message}
+                </Text>
+              </Group>
+            ))}
           </Stack>
         </Modal>
 
