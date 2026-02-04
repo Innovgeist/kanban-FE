@@ -60,7 +60,8 @@ export function KanbanBoard({
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [newColumnColor, setNewColumnColor] = useState("");
+  const DEFAULT_COLUMN_COLOR = "#e0f2fe";
+  const [newColumnColor, setNewColumnColor] = useState(DEFAULT_COLUMN_COLOR);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -378,8 +379,9 @@ export function KanbanBoard({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddColumn();
                     if (e.key === "Escape") {
-                      setIsAddingColumn(false);
-                      setNewColumnName("");
+                        setIsAddingColumn(false);
+                        setNewColumnName("");
+                        setNewColumnColor(DEFAULT_COLUMN_COLOR);
                     }
                   }}
                 />
@@ -440,6 +442,7 @@ export function KanbanBoard({
                     onClick={() => {
                       setIsAddingColumn(false);
                       setNewColumnName("");
+                      setNewColumnColor(DEFAULT_COLUMN_COLOR);
                     }}
                   >
                     <IconX size={16} />
@@ -452,7 +455,10 @@ export function KanbanBoard({
               variant="light"
               color="blue"
               leftSection={<IconPlus size={16} />}
-              onClick={() => setIsAddingColumn(true)}
+              onClick={() => {
+                setNewColumnColor(DEFAULT_COLUMN_COLOR);
+                setIsAddingColumn(true);
+              }}
               className="min-w-[200px] h-[60px] border-2 border-dashed border-blue-300 hover:border-blue-400"
             >
               Add Column
