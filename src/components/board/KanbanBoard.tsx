@@ -39,6 +39,7 @@ interface KanbanBoardProps {
   isProjectAdmin?: boolean;
 }
 
+
 export function KanbanBoard({
   boardId,
   isProjectAdmin = false,

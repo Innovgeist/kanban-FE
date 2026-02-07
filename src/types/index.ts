@@ -181,6 +181,8 @@ export interface UpdateBoardRequest {
 export interface UpdateColumnRequest {
   name?: string;
   color?: string; // Hex color code (e.g., "#3b82f6")
+   autoCleanupMode?: 'HIDE' | 'DELETE' | null;
+  autoCleanupAfterDays?: number | null;
 }
 
 export interface UpdateCardRequest {
