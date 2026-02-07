@@ -134,6 +134,7 @@ export function ProjectDetailPage() {
       updateStep('createBoard', 'done');
 
       updateStep('col1', 'in-progress');
+      console.log('Creating column New' ,newBoardId);
       await createColumn(newBoardId, { name: 'New', color: '#e0f2fe' });
       updateStep('col1', 'done');
 
