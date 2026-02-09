@@ -31,6 +31,8 @@ import {
   IconDotsVertical,
   IconEdit,
   IconTrash,
+  IconSettings,
+  IconArchive,
 } from "@tabler/icons-react";
 import type { Column, Card as CardType, CardPriority } from "../../types";
 import { KanbanCard } from "./KanbanCard";
@@ -42,7 +44,6 @@ interface KanbanColumnProps {
   cards: CardType[];
   isProjectAdmin?: boolean;
 }
-
 
 export function KanbanColumn({
   column,
@@ -64,7 +65,9 @@ export function KanbanColumn({
   const [actionLoading, setActionLoading] = useState(false);
   const [cleanupModalOpen, setCleanupModalOpen] = useState(false);
   const [cleanupDays, setCleanupDays] = useState<number | null>(14);
-  const [cleanupMode, setCleanupMode] = useState<"HIDE" | "DELETE">("HIDE");
+  const [cleanupMode, setCleanupMode] = useState<"HIDE" | "DELETE" | "NONE">(
+    "NONE",
+  );
 
   const { createCard, updateColumn, deleteColumn } = useBoardStore();
   const { members } = useProjectStore();
@@ -186,8 +189,9 @@ export function KanbanColumn({
       setActionLoading(false);
     }
   };
+  const visibleCards = (cards || []).filter((card) => !card.isHidden);
 
-  const cardIds = cards.map((card) => card._id);
+  const cardIds = visibleCards.map((card) => card._id);
 
   return (
     <Card
@@ -215,7 +219,7 @@ export function KanbanColumn({
             {column.name}
           </Text>
           <Badge size="sm" variant="light" color="gray">
-            {cards.length}
+            {visibleCards.length}
           </Badge>
         </Group>
         {isProjectAdmin && (
@@ -259,17 +263,19 @@ export function KanbanColumn({
               >
                 Delete Column
               </Menu.Item>
-              <Menu.Item>
-                <Button
-                  variant="subtle"
-                  fullWidth
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCleanupModalOpen(true);
-                  }}
-                >
-                  Auto Cleanup Tickets
-                </Button>
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={
+                  <IconArchive  style={{ width: rem(14), height: rem(14) }} />
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCleanupMode("HIDE");
+                  setCleanupDays(14);
+                  setCleanupModalOpen(true);
+                }}
+              >
+                Auto Cleanup Tickets
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -282,7 +288,7 @@ export function KanbanColumn({
         className="flex-1 overflow-y-auto min-h-[100px]"
       >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-          {cards.map((card) => (
+          {visibleCards.map((card) => (
             <KanbanCard key={card._id} card={card} />
           ))}
         </SortableContext>
@@ -503,12 +509,12 @@ export function KanbanColumn({
           {/* Mode */}
           <Radio.Group
             value={cleanupMode}
-            onChange={(value) => setCleanupMode(value as "HIDE" | "DELETE")}
+            onChange={(value) => setCleanupMode(value as any)}
             label="Action"
           >
             <Stack gap="xs" mt="xs">
+              <Radio value="NONE" label="None (No cleanup)" />
               <Radio value="HIDE" label="Hide (Archive tickets)" />
-              <Radio value="DELETE" label="Delete permanently" />
             </Stack>
           </Radio.Group>
 
@@ -516,11 +522,10 @@ export function KanbanColumn({
           <Select
             label="After how many days?"
             value={cleanupDays?.toString()}
-            onChange={(value) => setCleanupDays(Number(value))}
+            onChange={(value) => setCleanupDays(value ? Number(value) : null)}
             data={[
-              { value: "7", label: "7 days" },
               { value: "14", label: "14 days (recommended)" },
-              { value: "30", label: "30 days" },
+              
             ]}
           />
 
@@ -535,31 +540,57 @@ export function KanbanColumn({
             <Button variant="subtle" onClick={() => setCleanupModalOpen(false)}>
               Cancel
             </Button>
-         <Button
+            <Button
   color={cleanupMode === "DELETE" ? "red" : "blue"}
   loading={actionLoading}
+  disabled={cleanupMode === "NONE"}
   onClick={async () => {
     setActionLoading(true);
     try {
-      await updateColumn(column._id, {
-        autoCleanupMode: cleanupMode,
-        autoCleanupAfterDays: cleanupDays ?? 14,
+      const res: any = await updateColumn(column._id, {
+        runCleanupNow: true,
       });
 
       setCleanupModalOpen(false);
 
-      notifications.show({
-        title: "Success",
-        message:
-          cleanupMode === "DELETE"
-            ? "Tickets will be deleted automatically"
-            : "Tickets will be hidden automatically",
-        color: "green",
-      });
+      const cleanup = res?.cleanup;
+
+      // If backend didn't return cleanup info, just show success
+      if (!cleanup) {
+        notifications.show({
+          title: "Success",
+          message: "Cleanup executed.",
+          color: "green",
+        });
+        return;
+      }
+
+      const matched = cleanup.matchedCards ?? 0;
+      const hidden = cleanup.hiddenCards ?? 0;
+
+      if (matched === 0) {
+        notifications.show({
+          title: "Nothing to clean",
+          message: "No cards are eligible for cleanup in this column.",
+          color: "yellow",
+        });
+      } else if (hidden === 0) {
+        notifications.show({
+          title: "No changes",
+          message: "Eligible cards were already hidden.",
+          color: "blue",
+        });
+      } else {
+        notifications.show({
+          title: "Cleanup done",
+          message: `${hidden} card${hidden > 1 ? "s" : ""} hidden.`,
+          color: "green",
+        });
+      }
     } catch (err) {
       notifications.show({
         title: "Error",
-        message: "Failed to update auto cleanup settings",
+        message: "Failed to run cleanup",
         color: "red",
       });
     } finally {
