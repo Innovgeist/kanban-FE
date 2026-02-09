@@ -14,6 +14,7 @@ export function AuthCallbackPage() {
   useEffect(() => {
     const accessToken = searchParams.get('accessToken');
     const refreshToken = searchParams.get('refreshToken');
+
     const error = searchParams.get('error');
 
     if (error) {
@@ -33,11 +34,11 @@ export function AuthCallbackPage() {
       initialize()
         .then(() => {
           // Redirect to projects after initialization
-          navigate('/projects');
+          navigate('/projects', { replace: true });
         })
         .catch(() => {
           // If initialization fails, redirect to login
-          navigate('/login?error=initialization_failed');
+          navigate('/login?error=initialization_failed', { replace: true });
         });
     } else {
       setStatus('error');

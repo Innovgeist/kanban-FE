@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: SystemRole;
   createdAt: string;
+  authProvider: 'email' | 'google'; 
+  avatarUrl?: string | null;
 }
 
 export interface Tokens {
@@ -56,6 +58,8 @@ export interface Column {
   boardId: string;
   name: string;
   order: number;
+  autoCleanupMode?: 'HIDE' | 'DELETE' | null;
+  autoCleanupAfterDays?: number | null;
   color?: string; // Hex color code (e.g., "#3b82f6")
   cards?: Card[];
 }
@@ -71,6 +75,7 @@ export interface Card {
   expectedDeliveryDate?: string | null; // ISO 8601 date string
   assignedTo?: User[]; // Array of assigned users
   order: number;
+  isHidden: boolean;
   createdBy: User;
   createdAt: string;
 }
@@ -181,8 +186,7 @@ export interface UpdateBoardRequest {
 export interface UpdateColumnRequest {
   name?: string;
   color?: string; // Hex color code (e.g., "#3b82f6")
-   autoCleanupMode?: 'HIDE' | 'DELETE' | null;
-  autoCleanupAfterDays?: number | null;
+  runCleanupNow?: boolean;
 }
 
 export interface UpdateCardRequest {

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import type { ReactNode } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   AppShell,
   Group,
@@ -8,13 +8,9 @@ import {
   Avatar,
   UnstyledButton,
   rem,
-} from '@mantine/core';
-import {
-  IconLogout,
-  IconUser,
-  IconChevronDown,
-} from '@tabler/icons-react';
-import { useAuthStore } from '../../store';
+} from "@mantine/core";
+import { IconLogout, IconUser, IconChevronDown } from "@tabler/icons-react";
+import { useAuthStore } from "../../store";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -26,14 +22,14 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -44,23 +40,23 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Group h="100%" px="md" justify="space-between">
           <Link to="/projects" className="no-underline">
             <Group gap="xs">
-              <img 
-                src="/logo.png" 
-                alt="Logo" 
-                style={{ height: '32px', width: 'auto', borderRadius:"50%" }}
+              <img
+                src="/logo.png"
+                alt="Logo"
+                style={{ height: "32px", width: "auto", borderRadius: "50%" }}
               />
               <Text
                 size="xl"
                 fw={700}
                 className="text-gray-800 hidden sm:block"
               >
-               ProductQ
+                ProductQ
               </Text>
             </Group>
           </Link>
 
           <Group>
-            {user?.role === 'SUPERADMIN' && (
+            {user?.role === "SUPERADMIN" && (
               <Text size="xs" c="dimmed" className="hidden md:block">
                 SuperAdmin
               </Text>
@@ -68,12 +64,22 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>
                 <UnstyledButton className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Avatar color="blue" radius="xl" size="sm">
-                    {user?.name ? getInitials(user.name) : <IconUser size={16} />}
+                  <Avatar
+                    src={user?.avatarUrl || undefined} // ✅ Google image
+                    color="blue"
+                    radius="xl"
+                    size="sm"
+                  >
+                    {user?.name ? (
+                      getInitials(user.name)
+                    ) : (
+                      <IconUser size={16} />
+                    )}
                   </Avatar>
+
                   <div className="hidden sm:block">
                     <Text size="sm" fw={500}>
-                      {user?.name || 'User'}
+                      {user?.name || "User"}
                     </Text>
                     <Text size="xs" c="dimmed">
                       {user?.email}
@@ -89,7 +95,9 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Menu.Dropdown>
                 <Menu.Label>Account</Menu.Label>
                 <Menu.Item
-                  leftSection={<IconUser style={{ width: rem(14), height: rem(14) }} />}
+                  leftSection={
+                    <IconUser style={{ width: rem(14), height: rem(14) }} />
+                  }
                   disabled
                 >
                   Profile
@@ -97,7 +105,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Menu.Divider />
                 <Menu.Item
                   color="red"
-                  leftSection={<IconLogout style={{ width: rem(14), height: rem(14) }} />}
+                  leftSection={
+                    <IconLogout style={{ width: rem(14), height: rem(14) }} />
+                  }
                   onClick={handleLogout}
                 >
                   Logout

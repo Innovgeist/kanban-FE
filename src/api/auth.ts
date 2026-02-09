@@ -1,42 +1,48 @@
-import apiClient from './client';
+import apiClient from "./client";
 import type {
   ApiResponse,
   AuthResponse,
   LoginRequest,
   RegisterRequest,
-} from '../types';
+  User,
+} from "../types";
 
-const API_BASE_URL = 'https://kanban-internal.vercel.app';
+const API_BASE_URL = "'https://kanban-internal.vercel.app'";
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
     const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      '/auth/login',
-      data
+      "/auth/login",
+      data,
     );
     return response.data;
   },
+  // add this in authApi object
+  // me endpoint already defined below, remove this duplicate
 
-  register: async (data: RegisterRequest): Promise<ApiResponse<AuthResponse>> => {
+  register: async (
+    data: RegisterRequest,
+  ): Promise<ApiResponse<AuthResponse>> => {
     const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      '/auth/register',
-      data
+      "/auth/register",
+      data,
     );
     return response.data;
   },
 
-  refresh: async (refreshToken: string): Promise<ApiResponse<{ accessToken: string }>> => {
+  refresh: async (
+    refreshToken: string,
+  ): Promise<ApiResponse<{ accessToken: string }>> => {
     const response = await apiClient.post<ApiResponse<{ accessToken: string }>>(
-      '/auth/refresh',
-      { refreshToken }
+      "/auth/refresh",
+      { refreshToken },
     );
     return response.data;
   },
 
   logout: async (): Promise<ApiResponse<{ message: string }>> => {
-    const response = await apiClient.post<ApiResponse<{ message: string }>>(
-      '/auth/logout'
-    );
+    const response =
+      await apiClient.post<ApiResponse<{ message: string }>>("/auth/logout");
     return response.data;
   },
 
@@ -48,22 +54,27 @@ export const authApi = {
   // Set password using invitation token
   setPasswordWithInvitation: async (
     invitationToken: string,
-    password: string
+    password: string,
   ): Promise<ApiResponse<AuthResponse>> => {
     const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      '/auth/invitation/set-password',
-      { invitationToken, password }
+      "/auth/invitation/set-password",
+      { invitationToken, password },
     );
     return response.data;
   },
 
   // Get invitation details (admin only)
   getInvitationDetails: async (
-    email: string
+    email: string,
   ): Promise<ApiResponse<{ invitationToken: string; expiresAt: string }>> => {
     const response = await apiClient.get<
       ApiResponse<{ invitationToken: string; expiresAt: string }>
     >(`/auth/invitation/details?email=${encodeURIComponent(email)}`);
+    return response.data;
+  },
+  me: async (): Promise<ApiResponse<{ user: User }>> => {
+    const response =
+      await apiClient.get<ApiResponse<{ user: User }>>("/auth/me");
     return response.data;
   },
 };
