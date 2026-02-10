@@ -22,6 +22,7 @@ import {
   Select,
   MultiSelect,
   Radio,
+  NumberInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -31,7 +32,6 @@ import {
   IconDotsVertical,
   IconEdit,
   IconTrash,
-  IconSettings,
   IconArchive,
 } from "@tabler/icons-react";
 import type { Column, Card as CardType, CardPriority } from "../../types";
@@ -64,7 +64,8 @@ export function KanbanColumn({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [cleanupModalOpen, setCleanupModalOpen] = useState(false);
-  const [cleanupDays, setCleanupDays] = useState<number | null>(14);
+  const [cleanupDays, setCleanupDays] = useState<string>("14");
+  const [customDays, setCustomDays] = useState<number | string>(1);
   const [cleanupMode, setCleanupMode] = useState<"HIDE" | "DELETE" | "NONE">(
     "NONE",
   );
@@ -271,7 +272,7 @@ export function KanbanColumn({
                 onClick={(e) => {
                   e.stopPropagation();
                   setCleanupMode("HIDE");
-                  setCleanupDays(14);
+                  setCleanupDays("14");
                   setCleanupModalOpen(true);
                 }}
               >
@@ -521,13 +522,26 @@ export function KanbanColumn({
           {/* Duration */}
           <Select
             label="After how many days?"
-            value={cleanupDays?.toString()}
-            onChange={(value) => setCleanupDays(value ? Number(value) : null)}
+            value={cleanupDays}
+            onChange={(value) => setCleanupDays(value || "14")}
             data={[
+              { value: "7", label: "7 days" },
               { value: "14", label: "14 days (recommended)" },
-              
+              { value: "30", label: "30 days" },
+              { value: "custom", label: "Custom" },
             ]}
           />
+
+          {cleanupDays === "custom" && (
+            <NumberInput
+              label="Enter number of days"
+              value={customDays}
+              onChange={(value) => setCustomDays(value)}
+              min={1}
+              max={365}
+              placeholder="Enter days"
+            />
+          )}
 
           {cleanupMode === "DELETE" && (
             <Text size="xs" c="red">
