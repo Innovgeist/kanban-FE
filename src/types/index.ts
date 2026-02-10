@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: SystemRole;
   createdAt: string;
+  authProvider: 'email' | 'google'; 
+  avatarUrl?: string | null;
 }
 
 export interface Tokens {
