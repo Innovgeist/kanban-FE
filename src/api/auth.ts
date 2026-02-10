@@ -7,7 +7,7 @@ import type {
   User,
 } from "../types";
 
-const API_BASE_URL = "'https://kanban-internal.vercel.app'";
+const API_BASE_URL = 'https://kanban-internal.vercel.app';
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
