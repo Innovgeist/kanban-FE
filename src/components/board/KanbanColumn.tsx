@@ -33,6 +33,8 @@ import {
   IconEdit,
   IconTrash,
   IconArchive,
+  IconEye,
+  IconEyeOff,
 } from "@tabler/icons-react";
 import type { Column, Card as CardType, CardPriority } from "../../types";
 import { KanbanCard } from "./KanbanCard";
@@ -69,8 +71,10 @@ export function KanbanColumn({
   const [cleanupMode, setCleanupMode] = useState<"HIDE" | "DELETE" | "NONE">(
     "NONE",
   );
+  const [showHidden, setShowHidden] = useState(false);
 
-  const { createCard, updateColumn, deleteColumn } = useBoardStore();
+  const { createCard, updateColumn, deleteColumn, fetchBoard } =
+    useBoardStore();
   const { members } = useProjectStore();
 
   // Prepare member options for MultiSelect
@@ -191,6 +195,7 @@ export function KanbanColumn({
     }
   };
   const visibleCards = (cards || []).filter((card) => !card.isHidden);
+  const hiddenCards = (cards || []).filter((card) => card.isHidden);
 
   const cardIds = visibleCards.map((card) => card._id);
 
@@ -219,68 +224,99 @@ export function KanbanColumn({
           <Text fw={600} size="sm">
             {column.name}
           </Text>
-          <Badge size="sm" variant="light" color="gray">
+        </Group>
+        <Group>
+          <Badge
+            size="sm"
+            variant="filled"
+            color="gray"
+            leftSection={<IconEye size={12} />}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              opacity: visibleCards.length === 0 ? 0.5 : 1,
+            }}
+          >
             {visibleCards.length}
           </Badge>
+
+          <Badge
+            size="sm"
+            variant="filled"
+            color="red"
+            leftSection={<IconEyeOff size={12} />}
+            style={{
+              cursor: hiddenCards.length > 0 ? "pointer" : "not-allowed",
+              opacity: hiddenCards.length > 0 ? 1 : 0.5,
+            }}
+            onClick={() => {
+              if (hiddenCards.length === 0) return;
+              setShowHidden((prev) => !prev);
+            }}
+          >
+            {hiddenCards.length}
+          </Badge>
+
+          {isProjectAdmin && (
+            <Menu shadow="md" width={200} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <IconDotsVertical size={16} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={
+                    <IconEdit style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    columnForm.setValues({
+                      name: column.name,
+                      color: column.color || "#f3f4f6",
+                    });
+                    setEditModalOpen(true);
+                  }}
+                >
+                  Edit Column
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
+                  color="red"
+                  leftSection={
+                    <IconTrash style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteModalOpen(true);
+                  }}
+                >
+                  Delete Column
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={
+                    <IconArchive style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCleanupMode("HIDE");
+                    setCleanupDays("14");
+                    setCleanupModalOpen(true);
+                  }}
+                >
+                  Auto Cleanup Tickets
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
         </Group>
-        {isProjectAdmin && (
-          <Menu shadow="md" width={200} position="bottom-end">
-            <Menu.Target>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <IconDotsVertical size={16} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={
-                  <IconEdit style={{ width: rem(14), height: rem(14) }} />
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  columnForm.setValues({
-                    name: column.name,
-                    color: column.color || "#f3f4f6",
-                  });
-                  setEditModalOpen(true);
-                }}
-              >
-                Edit Column
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item
-                color="red"
-                leftSection={
-                  <IconTrash style={{ width: rem(14), height: rem(14) }} />
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteModalOpen(true);
-                }}
-              >
-                Delete Column
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item
-                leftSection={
-                  <IconArchive  style={{ width: rem(14), height: rem(14) }} />
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCleanupMode("HIDE");
-                  setCleanupDays("14");
-                  setCleanupModalOpen(true);
-                }}
-              >
-                Auto Cleanup Tickets
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        )}
       </Group>
 
       {/* Cards Container */}
@@ -516,6 +552,7 @@ export function KanbanColumn({
             <Stack gap="xs" mt="xs">
               <Radio value="NONE" label="None (No cleanup)" />
               <Radio value="HIDE" label="Hide (Archive tickets)" />
+              <Radio value="DELETE" label="Delete (Soft delete tickets)" />
             </Stack>
           </Radio.Group>
 
@@ -555,66 +592,57 @@ export function KanbanColumn({
               Cancel
             </Button>
             <Button
-  color={cleanupMode === "DELETE" ? "red" : "blue"}
-  loading={actionLoading}
-  disabled={cleanupMode === "NONE"}
-  onClick={async () => {
-    setActionLoading(true);
-    try {
-      const res: any = await updateColumn(column._id, {
-        runCleanupNow: true,
-      });
+              color={cleanupMode === "DELETE" ? "red" : "blue"}
+              loading={actionLoading}
+              disabled={cleanupMode === "NONE"}
+              onClick={async () => {
+                setActionLoading(true);
+                try {
+                  const days =
+                    cleanupDays === "custom"
+                      ? Number(customDays)
+                      : Number(cleanupDays);
 
-      setCleanupModalOpen(false);
+                  const mode = cleanupMode === "NONE" ? null : cleanupMode;
 
-      const cleanup = res?.cleanup;
+                  // ✅ store settings + run cleanup
+                  await updateColumn(column._id, {
+                    autoCleanupMode: mode,
+                    autoCleanupAfterDays: mode ? days : null,
+                    runCleanupNow: true,
+                  });
 
-      // If backend didn't return cleanup info, just show success
-      if (!cleanup) {
-        notifications.show({
-          title: "Success",
-          message: "Cleanup executed.",
-          color: "green",
-        });
-        return;
-      }
+                  const boardId =
+                    typeof column.boardId === "string"
+                      ? column.boardId
+                      : (column.boardId as any)?._id;
 
-      const matched = cleanup.matchedCards ?? 0;
-      const hidden = cleanup.hiddenCards ?? 0;
+                  // ✅ refresh UI so hidden cards disappear
+                  if (boardId) await fetchBoard(boardId);
 
-      if (matched === 0) {
-        notifications.show({
-          title: "Nothing to clean",
-          message: "No cards are eligible for cleanup in this column.",
-          color: "yellow",
-        });
-      } else if (hidden === 0) {
-        notifications.show({
-          title: "No changes",
-          message: "Eligible cards were already hidden.",
-          color: "blue",
-        });
-      } else {
-        notifications.show({
-          title: "Cleanup done",
-          message: `${hidden} card${hidden > 1 ? "s" : ""} hidden.`,
-          color: "green",
-        });
-      }
-    } catch (err) {
-      notifications.show({
-        title: "Error",
-        message: "Failed to run cleanup",
-        color: "red",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  }}
->
-  Save
-</Button>
+                  setCleanupModalOpen(false);
 
+                  notifications.show({
+                    title: "Success",
+                    message:
+                      mode === null
+                        ? "Cleanup disabled for this column."
+                        : `Cleanup executed (${mode}) for cards older than ${days} day(s).`,
+                    color: "green",
+                  });
+                } catch (err) {
+                  notifications.show({
+                    title: "Error",
+                    message: "Failed to run cleanup",
+                    color: "red",
+                  });
+                } finally {
+                  setActionLoading(false);
+                }
+              }}
+            >
+              Save
+            </Button>
           </Group>
         </Stack>
       </Modal>
