@@ -71,7 +71,7 @@ export function KanbanColumn({
   const [cleanupMode, setCleanupMode] = useState<"HIDE" | "DELETE" | "NONE">(
     "NONE",
   );
-  const [showHidden, setShowHidden] = useState(false);
+  const [, setShowHidden] = useState(false);
 
   const { createCard, updateColumn, deleteColumn, fetchBoard } =
     useBoardStore();
