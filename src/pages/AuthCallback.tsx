@@ -26,21 +26,12 @@ export function AuthCallbackPage() {
       return;
     }
 
-    if (accessToken && refreshToken) {
-      // Store tokens
-      setTokens(accessToken, refreshToken);
-
-      // Initialize auth state
-      initialize()
-        .then(() => {
-          // Redirect to projects after initialization
-          navigate('/projects', { replace: true });
-        })
-        .catch(() => {
-          // If initialization fails, redirect to login
-          navigate('/login?error=initialization_failed', { replace: true });
-        });
-    } else {
+if (accessToken && refreshToken) {
+  setTokens(accessToken, refreshToken);
+  navigate('/projects', { replace: true }); // App.tsx will handle initialize
+  return;
+}
+ else {
       setStatus('error');
       setErrorMessage('Missing authentication tokens');
       setTimeout(() => {
