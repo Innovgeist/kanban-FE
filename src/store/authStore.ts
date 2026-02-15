@@ -37,6 +37,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         'Login failed. Please try again.';
       set({ error: errorMessage, isLoading: false });
       throw error;
+    } finally{
+      set({isLoading:false});
     }
   },
 
@@ -55,6 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         'Registration failed. Please try again.';
       set({ error: errorMessage, isLoading: false });
       throw error;
+    }finally{
+      set({isLoading:false});
     }
   },
 
