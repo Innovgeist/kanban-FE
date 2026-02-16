@@ -15,12 +15,14 @@ interface AuthState {
   initialize: () => Promise<void>;
   clearError: () => void;
 }
+let hasInitialized = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
+
 
   login: async (data: LoginRequest) => {
     set({ isLoading: true, error: null });
@@ -69,10 +71,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Ignore logout errors - we still want to clear local state
     } finally {
       clearTokens();
-      set({ user: null, isAuthenticated: false });
+      set({ user: null, isAuthenticated: false ,isLoading:false});
     }
   },
 initialize: async () => {
+  if(hasInitialized) return;
+  hasInitialized = true;
   set({ isLoading: true, error: null });
 
   const { accessToken, refreshToken } = getTokens();
@@ -82,8 +86,7 @@ initialize: async () => {
     if (meRes.success) {
       set({
         user: meRes.data.user, // ✅ includes avatarUrl
-        isAuthenticated: true,
-        isLoading: false,
+        isAuthenticated: true
       });
       return true;
     }

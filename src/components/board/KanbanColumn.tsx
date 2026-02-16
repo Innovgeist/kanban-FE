@@ -204,6 +204,7 @@ export function KanbanColumn({
       ref={setSortableRef}
       style={{
         ...style,
+        overflow:'visible',
         backgroundColor: column.color || "#f3f4f6",
       }}
       withBorder
@@ -323,6 +324,10 @@ export function KanbanColumn({
       <div
         ref={setDroppableRef}
         className="flex-1 overflow-y-auto min-h-[100px]"
+        style={{overflowY:'auto',
+          overflowX:'visible',
+          paddingBottom:isAddingCard ? 230:64,
+        }}
       >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {visibleCards.map((card) => (
@@ -340,8 +345,20 @@ export function KanbanColumn({
       </div>
 
       {/* Add Card Section */}
+      <div
+  style={{
+    position: "absolute",
+    left:0,
+    right:0,
+    bottom: 0,
+    zIndex: 3000,
+    background: column.color || "#f3f4f6",
+    padding:8,
+    borderTop:'1px solid rgba(0,0,0,0.08)'
+  }}
+>    
       {isAddingCard ? (
-        <Stack gap="xs" mt="sm">
+        <Stack gap="xs">
           <TextInput
             placeholder="Card title"
             value={newCardTitle}
@@ -420,19 +437,21 @@ export function KanbanColumn({
             </ActionIcon>
           </Group>
         </Stack>
+        
       ) : (
+        
         <Button
           variant="subtle"
           color="gray"
           leftSection={<IconPlus size={16} />}
           fullWidth
-          mt="sm"
           onClick={() => setIsAddingCard(true)}
           className="hover:bg-gray-200"
         >
           Add Card
         </Button>
       )}
+      </div>
 
       {/* Edit Column Modal */}
       <Modal
@@ -503,6 +522,7 @@ export function KanbanColumn({
           </Stack>
         </form>
       </Modal>
+      
 
       {/* Delete Column Modal */}
       <Modal

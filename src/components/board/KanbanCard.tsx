@@ -18,6 +18,7 @@ import {
   Select,
   MultiSelect,
   Tooltip,
+  HoverCard,
 } from "@mantine/core";
 import { IconCalendar, IconAlertCircle } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
@@ -40,6 +41,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isHovered,setIsHovered] = useState(false);
 
   const { updateCard, deleteCard } = useBoardStore();
   const { members } = useProjectStore();
@@ -193,8 +195,38 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
     }
   };
 
+  
+
   return (
     <>
+     <HoverCard
+      width={380}
+      shadow="xl"
+      openDelay={150}
+      position="right"
+      withinPortal
+      zIndex={999999}
+    >
+      <HoverCard.Target>
+        {/* ✅ wrapper takes dnd-kit ref + listeners */}
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            transform: `${CSS.Transform.toString(transform) || ""} scale(${
+              isHovered && !isSortableDragging ? 1.03 : 1
+            })`,
+            transition: transition ?? "transform 150ms ease",
+            opacity: isSortableDragging ? 0.5 : 1,
+            zIndex: isHovered || isSortableDragging ? 9999 : 1,
+            position: "relative",
+            willChange: "transform",
+          }}
+        >
+
       <MantineCard
         ref={setNodeRef}
         style={style}
@@ -349,6 +381,10 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
           )}
         </Group>
       </MantineCard>
+         </div>
+      </HoverCard.Target>
+      
+      </HoverCard>
 
       {/* Edit Card Modal */}
       <Modal
@@ -500,6 +536,7 @@ export function KanbanCardOverlay({ card }: { card: Card }) {
   };
 
   return (
+
     <MantineCard
       withBorder
       shadow="lg"
