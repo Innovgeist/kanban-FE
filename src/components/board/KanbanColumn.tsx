@@ -351,7 +351,7 @@ export function KanbanColumn({
     left:0,
     right:0,
     bottom: 0,
-    zIndex: 3000,
+    zIndex: 1,
     background: column.color || "#f3f4f6",
     padding:8,
     borderTop:'1px solid rgba(0,0,0,0.08)'

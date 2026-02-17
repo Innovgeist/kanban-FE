@@ -120,6 +120,9 @@ initialize: async () => {
     clearTokens();
     set({ user: null, isAuthenticated: false, isLoading: false });
   }
+  finally{
+    set({isLoading:false})
+  }
 },
 
 
