@@ -254,7 +254,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
                 {card.priority}
               </Badge>
             )}
-            <Menu shadow="md" width={200} position="bottom-end">
+            <Menu shadow="md" width={200} position="bottom-end" withinPortal zIndex={9999999}>
               <Menu.Target>
                 <ActionIcon
                   variant="subtle"
@@ -392,6 +392,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
         onClose={() => setEditModalOpen(false)}
         title="Edit Card"
         centered
+        zIndex={10000}
       >
         <form onSubmit={cardForm.onSubmit(handleEditCard)}>
           <Stack gap="md">
@@ -460,6 +461,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
         onClose={() => setDeleteModalOpen(false)}
         title="Delete Card"
         centered
+        zIndex={10000}
       >
         <Stack gap="md">
           <Text>
