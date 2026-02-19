@@ -49,8 +49,8 @@ const theme = createTheme({
 });
 
 function App() {
-  const { initialize, isAuthenticated } = useAuthStore();
-
+const initialize = useAuthStore((s) => s.initialize);
+const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   useEffect(() => {
     initialize().catch(() => {
       // Silently handle initialization errors
