@@ -41,7 +41,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [isHovered,setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const { updateCard, deleteCard } = useBoardStore();
   const { members } = useProjectStore();
@@ -195,195 +195,217 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
     }
   };
 
-  
-
   return (
     <>
-     <HoverCard
-      width={380}
-      shadow="xl"
-      openDelay={150}
-      position="right"
-      withinPortal
-      zIndex={999999}
-    >
-      <HoverCard.Target>
-        {/* ✅ wrapper takes dnd-kit ref + listeners */}
-        <div
-          ref={setNodeRef}
-          {...attributes}
-          {...listeners}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          style={{
-            transform: `${CSS.Transform.toString(transform) || ""} scale(${
-              isHovered && !isSortableDragging ? 1.03 : 1
-            })`,
-            transition: transition ?? "transform 150ms ease",
-            opacity: isSortableDragging ? 0.5 : 1,
-            zIndex: isHovered || isSortableDragging ? 9999 : 1,
-            position: "relative",
-            willChange: "transform",
-          }}
-        >
-
-      <MantineCard
-        ref={setNodeRef}
-        style={style}
-        withBorder
-        shadow="sm"
-        radius="md"
-        p="sm"
-        className={`bg-white cursor-grab active:cursor-grabbing mb-2 ${
-          isDragging ? "shadow-lg ring-2 ring-blue-400" : ""
-        }`}
-        {...attributes}
-        {...listeners}
+      <HoverCard
+        width={380}
+        shadow="xl"
+        openDelay={150}
+        position="right"
+        withinPortal
+        zIndex={999999}
       >
-        <Group justify="space-between" wrap="nowrap" gap="xs" mb="xs">
-          <Text fw={500} size="sm" lineClamp={2} className="flex-1">
-            {card.title}
-          </Text>
-          <Group gap={4}>
-            {card.priority && (
-              <Badge
-                size="xs"
-                color={getPriorityColor(card.priority)}
-                variant="light"
-              >
-                {card.priority}
-              </Badge>
-            )}
-            <Menu shadow="md" width={200} position="bottom-end" withinPortal zIndex={9999999}>
-              <Menu.Target>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <IconDotsVertical size={16} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item
-                  leftSection={
-                    <IconEdit style={{ width: rem(14), height: rem(14) }} />
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    cardForm.setValues({
-                      title: card.title,
-                      description: card.description || "",
-                      priority: (card.priority || "MEDIUM") as CardPriority,
-                      expectedDeliveryDate: card.expectedDeliveryDate
-                        ? new Date(card.expectedDeliveryDate)
-                        : null,
-                      assignedTo: (card.assignedTo || []).map(
-                        (user) => user._id,
-                      ),
-                    });
-                    setEditModalOpen(true);
-                  }}
-                >
-                  Edit Card
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  color="red"
-                  leftSection={
-                    <IconTrash style={{ width: rem(14), height: rem(14) }} />
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteModalOpen(true);
-                  }}
-                >
-                  Delete Card
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-            <IconGripVertical size={16} className="text-gray-400 shrink-0" />
-          </Group>
-        </Group>
-
-        {card.description && (
-          <Text size="xs" c="dimmed" lineClamp={2} mb="xs">
-            {card.description}
-          </Text>
-        )}
-
-        {/* Delivery Date and Assigned Users - Justified */}
-        {(card.expectedDeliveryDate ||
-          (card.assignedTo && card.assignedTo.length > 0)) && (
-          <Group justify="space-between" mb="xs">
-            {/* Delivery Date */}
-            {card.expectedDeliveryDate && (
-              <Group gap={4}>
-                {dateStatus === "passed" ? (
-                  <>
-                    <IconAlertCircle size={14} className="text-red-600" />
-                    <Text size="xs" c="red" fw={500}>
-                      Overdue: {formatDate(card.expectedDeliveryDate)}
-                    </Text>
-                  </>
-                ) : dateStatus === "near" ? (
-                  <>
-                    <IconAlertCircle size={14} className="text-orange-600" />
-                    <Text size="xs" c="orange" fw={500}>
-                      Due Soon: {formatDate(card.expectedDeliveryDate)}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <IconCalendar size={12} className="text-gray-500" />
-                    <Text size="xs" c="dimmed">
-                      Due: {formatDate(card.expectedDeliveryDate)}
-                    </Text>
-                  </>
-                )}
+        <HoverCard.Target>
+          {/* ✅ wrapper takes dnd-kit ref + listeners */}
+          <div
+            ref={setNodeRef}
+            {...attributes}
+            {...listeners}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{
+              transform: `${CSS.Transform.toString(transform) || ""} scale(${
+                isHovered && !isSortableDragging ? 1.03 : 1
+              })`,
+              transition: transition ?? "transform 150ms ease",
+              opacity: isSortableDragging ? 0.5 : 1,
+              zIndex: isHovered || isSortableDragging ? 9999 : 1,
+              position: "relative",
+              willChange: "transform",
+            }}
+          >
+            <MantineCard
+              ref={setNodeRef}
+              style={style}
+              withBorder
+              shadow="sm"
+              radius="md"
+              p="sm"
+              className={`bg-white cursor-grab active:cursor-grabbing mb-2 ${
+                isDragging ? "shadow-lg ring-2 ring-blue-400" : ""
+              }`}
+              {...attributes}
+              {...listeners}
+            >
+              <Group justify="space-between" wrap="nowrap" gap="xs" mb="xs">
+                <Text fw={500} size="sm" lineClamp={2} className="flex-1">
+                  {card.title}
+                </Text>
+                <Group gap={4}>
+                  {card.priority && (
+                    <Badge
+                      size="xs"
+                      color={getPriorityColor(card.priority)}
+                      variant="light"
+                    >
+                      {card.priority}
+                    </Badge>
+                  )}
+                  <Menu
+                    shadow="md"
+                    width={200}
+                    position="bottom-end"
+                    withinPortal
+                    zIndex={9999999}
+                  >
+                    <Menu.Target>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <IconDotsVertical size={16} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={
+                          <IconEdit
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cardForm.setValues({
+                            title: card.title,
+                            description: card.description || "",
+                            priority: (card.priority ||
+                              "MEDIUM") as CardPriority,
+                            expectedDeliveryDate: card.expectedDeliveryDate
+                              ? new Date(card.expectedDeliveryDate)
+                              : null,
+                            assignedTo: (card.assignedTo || []).map(
+                              (user) => user._id,
+                            ),
+                          });
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        Edit Card
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        color="red"
+                        leftSection={
+                          <IconTrash
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteModalOpen(true);
+                        }}
+                      >
+                        Delete Card
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                  <IconGripVertical
+                    size={16}
+                    className="text-gray-400 shrink-0"
+                  />
+                </Group>
               </Group>
-            )}
 
-            {/* Assigned Users */}
-            {card.assignedTo && card.assignedTo.length > 0 && (
-              <Group gap={4}>
-                {card.assignedTo.slice(0, 3).map((user) => (
-                  <Tooltip key={user._id} label={user.name || user.email}>
-                    <Avatar src={user.avatarUrl} size="xs" radius="xl">
-                      {!user.avatarUrl && getInitials(user.name)}
-                    </Avatar>
-                  </Tooltip>
-                ))}
-                {card.assignedTo.length > 3 && (
+              {card.description && (
+                <Text size="xs" c="dimmed" lineClamp={2} mb="xs">
+                  {card.description}
+                </Text>
+              )}
+
+              {/* Delivery Date and Assigned Users - Justified */}
+              {(card.expectedDeliveryDate ||
+                (card.assignedTo && card.assignedTo.length > 0)) && (
+                <Group justify="space-between" mb="xs">
+                  {/* Delivery Date */}
+                  {card.expectedDeliveryDate && (
+                    <Group gap={4}>
+                      {dateStatus === "passed" ? (
+                        <>
+                          <IconAlertCircle size={14} className="text-red-600" />
+                          <Text size="xs" c="red" fw={500}>
+                            Overdue: {formatDate(card.expectedDeliveryDate)}
+                          </Text>
+                        </>
+                      ) : dateStatus === "near" ? (
+                        <>
+                          <IconAlertCircle
+                            size={14}
+                            className="text-orange-600"
+                          />
+                          <Text size="xs" c="orange" fw={500}>
+                            Due Soon: {formatDate(card.expectedDeliveryDate)}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <IconCalendar size={12} className="text-gray-500" />
+                          <Text size="xs" c="dimmed">
+                            Due: {formatDate(card.expectedDeliveryDate)}
+                          </Text>
+                        </>
+                      )}
+                    </Group>
+                  )}
+
+                  {/* Assigned Users */}
+                  {card.assignedTo && card.assignedTo.length > 0 && (
+                    <Group gap={4}>
+                      {card.assignedTo.slice(0, 3).map((user) => (
+                        <Tooltip
+                          key={user._id}
+                          label={user.name || user.email}
+                          withinPortal
+                          zIndex={9999999}
+                          position="top"
+                          withArrow
+                        >
+                          <Avatar src={user.avatarUrl} size="xs" radius="xl">
+                            {!user.avatarUrl && getInitials(user.name)}
+                          </Avatar>
+                        </Tooltip>
+                      ))}
+                      {card.assignedTo.length > 3 && (
+                        <Text size="xs" c="dimmed">
+                          +{card.assignedTo.length - 3}
+                        </Text>
+                      )}
+                    </Group>
+                  )}
+                </Group>
+              )}
+
+              <Group justify="space-between" mt="xs">
+                <Group gap={4}>
+                  <Avatar size="xs" color="blue" radius="xl">
+                    {card.createdBy?.name
+                      ? getInitials(card.createdBy.name)
+                      : "?"}
+                  </Avatar>
                   <Text size="xs" c="dimmed">
-                    +{card.assignedTo.length - 3}
+                    {card.createdBy?.name || "Unknown"}
+                  </Text>
+                </Group>
+                {card.createdAt && (
+                  <Text size="xs" c="dimmed">
+                    {formatCreatedDate(card.createdAt)}
                   </Text>
                 )}
               </Group>
-            )}
-          </Group>
-        )}
-
-        <Group justify="space-between" mt="xs">
-          <Group gap={4}>
-            <Avatar size="xs" color="blue" radius="xl">
-              {card.createdBy?.name ? getInitials(card.createdBy.name) : "?"}
-            </Avatar>
-            <Text size="xs" c="dimmed">
-              {card.createdBy?.name || "Unknown"}
-            </Text>
-          </Group>
-          {card.createdAt && (
-            <Text size="xs" c="dimmed">
-              {formatCreatedDate(card.createdAt)}
-            </Text>
-          )}
-        </Group>
-      </MantineCard>
-         </div>
-      </HoverCard.Target>
-      
+            </MantineCard>
+          </div>
+        </HoverCard.Target>
       </HoverCard>
 
       {/* Edit Card Modal */}
@@ -442,6 +464,7 @@ export function KanbanCard({ card, isDragging }: KanbanCardProps) {
               clearable
               searchable
               {...cardForm.getInputProps("assignedTo")}
+              comboboxProps={{ withinPortal: false }}
             />
             <Group justify="flex-end" mt="md">
               <Button variant="subtle" onClick={() => setEditModalOpen(false)}>
@@ -538,7 +561,6 @@ export function KanbanCardOverlay({ card }: { card: Card }) {
   };
 
   return (
-
     <MantineCard
       withBorder
       shadow="lg"
