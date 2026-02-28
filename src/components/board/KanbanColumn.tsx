@@ -79,7 +79,7 @@ export function KanbanColumn({
 
   // Prepare member options for MultiSelect
   const memberOptions = members.map((member) => ({
-    value: member.userId._id,
+    value: String(member.userId._id),
     label: member.userId.name || member.userId.email,
   }));
 
@@ -204,6 +204,7 @@ export function KanbanColumn({
       ref={setSortableRef}
       style={{
         ...style,
+        position: "relative",
         overflow:'visible',
         backgroundColor: column.color || "#f3f4f6",
       }}
@@ -407,9 +408,13 @@ export function KanbanColumn({
             size="sm"
             data={memberOptions}
             value={newCardAssignedTo}
-            onChange={setNewCardAssignedTo}
+            onChange={(v)=> {  
+              setNewCardAssignedTo(v ?? [] )}}
             clearable
             searchable
+           comboboxProps={{ withinPortal: true }}
+           styles={{ dropdown: { zIndex: 999999 } }}
+
           />
           <Group gap="xs">
             <Button
