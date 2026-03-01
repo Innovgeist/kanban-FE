@@ -7,8 +7,14 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireSuperAdmin = false }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const  isAuthenticated  = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const location = useLocation();
+
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

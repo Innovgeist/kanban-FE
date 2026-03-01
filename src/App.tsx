@@ -51,13 +51,16 @@ const theme = createTheme({
 function App() {
 const initialize = useAuthStore((s) => s.initialize);
 const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+const isLoading = useAuthStore((s) => s.isLoading);
   useEffect(() => {
     initialize().catch(() => {
       // Silently handle initialization errors
       // The initialize function already handles clearing tokens on failure
     });
   }, [initialize]);
-
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
   return (
     <MantineProvider theme={theme}>
       <Notifications position="top-right" />
