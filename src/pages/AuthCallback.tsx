@@ -1,55 +1,63 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Center, Loader, Text, Stack } from '@mantine/core';
-import { setTokens } from '../api';
-import { useAuthStore } from '../store';
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Center, Loader, Text, Stack } from "@mantine/core";
+import { setTokens } from "../api";
+import { useAuthStore } from "../store";
 
 export function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { initialize } = useAuthStore();
-  const [status, setStatus] = useState<'processing' | 'error'>('processing');
-  const [errorMessage, setErrorMessage] = useState('');
+  const initialize = useAuthStore((s) => s.initialize);
+  const [status, setStatus] = useState<"processing" | "error">("processing");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const accessToken = searchParams.get('accessToken');
-    const refreshToken = searchParams.get('refreshToken');
+    (async () => {
+      const accessToken = searchParams.get("accessToken");
+      const refreshToken = searchParams.get("refreshToken");
 
-    const error = searchParams.get('error');
+      const error = searchParams.get("error");
 
-    if (error) {
-      setStatus('error');
-      setErrorMessage(decodeURIComponent(error));
-      setTimeout(() => {
-        navigate('/login?error=' + encodeURIComponent(error));
-      }, 2000);
-      return;
-    }
+      if (error) {
+        setStatus("error");
+        setErrorMessage(decodeURIComponent(error));
+        setTimeout(() => {
+          navigate("/login?error=" + encodeURIComponent(error));
+        }, 2000);
+        return;
+      }
+      if (!accessToken || !refreshToken) {
+        setStatus("error");
+        setErrorMessage("Missing authentication tokens");
+        setTimeout(() => {
+          navigate("/login?error=missing_tokens", { replace: true });
+        }, 2000);
+        return;
+      }
 
-if (accessToken && refreshToken) {
-  setTokens(accessToken, refreshToken);
-  navigate('/projects', { replace: true }); // App.tsx will handle initialize
-  return;
-}
- else {
-      setStatus('error');
-      setErrorMessage('Missing authentication tokens');
-      setTimeout(() => {
-        navigate('/login?error=missing_tokens');
-      }, 2000);
-    }
+      setTokens(accessToken, refreshToken);
+      await new Promise((r) => setTimeout(r, 50));
+      try {
+        await initialize();
+      } catch {
+        await new Promise((r) => setTimeout(r, 150));
+        await initialize();
+      }
+
+window.location.replace("/projects");
+    })();
   }, [searchParams, navigate, initialize]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <Center>
         <Stack align="center" gap="md">
-          {status === 'processing' ? (
+          {status === "processing" ? (
             <>
               <Loader size="lg" />
               <Text size="lg" c="dimmed">
                 Processing authentication...
-              </Text>
+              </Text> 
             </>
           ) : (
             <>

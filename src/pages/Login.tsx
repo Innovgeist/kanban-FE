@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   TextInput,
   PasswordInput,
@@ -19,8 +19,12 @@ import { authApi } from '../api/auth';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const  location = useLocation();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
+
+   const from = (location.state as any)?.from?.pathname || "/projects";
+
 
   const form = useForm({
     initialValues: {
@@ -39,7 +43,7 @@ export function LoginPage() {
     clearError();
     try {
       await login(values);
-      navigate('/projects');
+      navigate(from, { replace: true });
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -55,6 +55,8 @@ export function ProjectsPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const isSuperAdmin = user?.role === 'SUPERADMIN';
+  const fetched = useRef(false);
+
 
   const form = useForm({
     initialValues: {
@@ -80,6 +82,8 @@ export function ProjectsPage() {
   });
 
   useEffect(() => {
+    if (fetched.current) return;
+    fetched.current = true;
     fetchProjects();
   }, [fetchProjects]);
 

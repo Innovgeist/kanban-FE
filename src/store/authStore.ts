@@ -15,12 +15,11 @@ interface AuthState {
   initialize: () => Promise<void>;
   clearError: () => void;
 }
-let hasInitialized = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
 
 
@@ -75,11 +74,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 initialize: async () => {
-  if(hasInitialized) return;
-  hasInitialized = true;
+  
   set({ isLoading: true, error: null });
-
   const { accessToken, refreshToken } = getTokens();
+  if (!accessToken && !refreshToken) {
+    set({ user: null, isAuthenticated: false, isLoading: false });
+    return;
+  }
 
   const loadMe = async () => {
     const meRes = await authApi.me(); // ✅ /auth/me
